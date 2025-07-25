@@ -1,36 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Distance</title>
-    <style>body{font-family:Arial;text-align:center;margin:20px}</style>
+  <meta charset="UTF-8">
+  <title>Расстояние до точки</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; }
+    #distance { font-size: 1.5em; margin-top: 1em; }
+  </style>
 </head>
 <body>
-    <div id="distance">-</div>
-    <button onclick="getDistance()">Get Distance</button>
+  <h1>Расстояние до заданной точки</h1>
+  <button onclick="updateDistance()">Обновить расстояние</button>
+  <div id="distance">Ожидаем данные...</div>
 
-    <script>ы
-        // Функция, которая "вычисляет" координаты, а не хранит их
-        function getTarget() {
-            // Вычисляем координаты через математические операции
-            const lat = (Math.atan(1) * 208 / (Math.PI / 2.7)).toFixed(4);
-            const lng = (Math.sqrt(3487) + 52.1234;
-            return { lat: parseFloat(lat), lng: parseFloat(lng.toFixed(4)) };
-        }
+  <script>
+    const encodedLat = "1l91";
+    const encodedLng = "2dse";
 
-        // Получаем расстояние
-        function getDistance() {
-            navigator.geolocation.getCurrentPosition(pos => {
-                const target = getTarget();
-                const R = 6371e3;
-                const φ1 = pos.coords.latitude * Math.PI/180;
-                const φ2 = target.lat * Math.PI/180;
-                const Δφ = (target.lat - pos.coords.latitude) * Math.PI/180;
-                const Δλ = (target.lng - pos.coords.longitude) * Math.PI/180;
-                const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
-                const dist = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-                document.getElementById('distance').textContent = `${dist} meters (target: ${target.lat}, ${target.lng})`;
-            });
-        }
-    </script>
+    function decodeCoordinate(base36str) {
+      return parseInt(base36str, 36) / 100000; // радианы
+    }
+
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371000; // радиус Земли в метрах
+      const dLat = lat2 - lat1;
+      const dLon = lon2 - lon1;
+      const a = Math.sin(dLat/2)**2 +
+                Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function toRadians(deg) {
+      return deg * Math.PI / 180;
+    }
+
+    function updateDistance() {
+      if (!navigator.geolocation) {
+        document.getElementById('distance').textContent = 'Геолокация не поддерживается.';
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(position => {
+        const lat1 = toRadians(position.coords.latitude);
+        const lon1 = toRadians(position.coords.longitude);
+
+        const lat2 = decodeCoordinate(encodedLat);
+        const lon2 = decodeCoordinate(encodedLng);
+
+        const distance = haversineDistance(lat1, lon1, lat2, lon2);
+        document.getElementById('distance').textContent =
+          `Расстояние: ${Math.round(distance)} метров`;
+      }, error => {
+        document.getElementById('distance').textContent = 'Ошибка получения геопозиции.';
+      });
+    }
+
+    // Автообновление при изменении позиции
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(() => updateDistance());
+    }
+
+    updateDistance(); // при загрузке
+  </script>
 </body>
 </html>
