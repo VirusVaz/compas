@@ -1,173 +1,36 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Навигация к скрытой точке</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 20px;
-        }
-        
-        #container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        
-        #arrow {
-            font-size: 100px;
-            margin: 30px 0;
-            transition: transform 0.5s;
-        }
-        
-        #distance {
-            font-size: 24px;
-            margin: 20px 0;
-        }
-        
-        #status {
-            color: #666;
-            margin: 20px 0;
-        }
-        
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 10px 2px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        
-        .error {
-            color: red;
-        }
-    </style>
+    <title>Distance</title>
+    <style>body{font-family:Arial;text-align:center;margin:20px}</style>
 </head>
 <body>
-    <div id="container">
-        <h1>Навигация к скрытой точке</h1>
-        <p id="status">Запрос разрешения на доступ к вашему местоположению...</p>
-        <div id="arrow">↑</div>
-        <div id="distance">-</div>
-        <button id="refresh">Обновить положение</button>
-    </div>
+    <div id="distance">-</div>
+    <button onclick="getDistance()">Get Distance</button>
 
-    <script>
-        // В реальном приложении эти координаты должны приходить с бэкенда
-        // Для примера мы их задаем здесь (например, координаты какого-то места в Москве)
-        const targetPoint = {
-            latitude: -34.629483,  // Широта цели
-            longitude: -58.374027  // Долгота цели
-        };
-        
-        const arrowElement = document.getElementById('arrow');
-        const distanceElement = document.getElementById('distance');
-        const statusElement = document.getElementById('status');
-        const refreshButton = document.getElementById('refresh');
-        
-        // Функция для вычисления расстояния между двумя точками (в метрах)
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; // Радиус Земли в метрах
-            const φ1 = lat1 * Math.PI / 180;
-            const φ2 = lat2 * Math.PI / 180;
-            const Δφ = (lat2 - lat1) * Math.PI / 180;
-            const Δλ = (lon2 - lon1) * Math.PI / 180;
-            
-            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                      Math.cos(φ1) * Math.cos(φ2) *
-                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            
-            return R * c;
+    <script>ы
+        // Функция, которая "вычисляет" координаты, а не хранит их
+        function getTarget() {
+            // Вычисляем координаты через математические операции
+            const lat = (Math.atan(1) * 208 / (Math.PI / 2.7)).toFixed(4);
+            const lng = (Math.sqrt(3487) + 52.1234;
+            return { lat: parseFloat(lat), lng: parseFloat(lng.toFixed(4)) };
         }
-        
-        // Функция для вычисления направления (азимута) от точки 1 к точке 2
-        function calculateBearing(lat1, lon1, lat2, lon2) {
-            const φ1 = lat1 * Math.PI / 180;
-            const φ2 = lat2 * Math.PI / 180;
-            const λ1 = lon1 * Math.PI / 180;
-            const λ2 = lon2 * Math.PI / 180;
-            
-            const y = Math.sin(λ2 - λ1) * Math.cos(φ2);
-            const x = Math.cos(φ1) * Math.sin(φ2) -
-                      Math.sin(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1);
-            const θ = Math.atan2(y, x);
-            
-            return (θ * 180 / Math.PI + 360) % 360;
+
+        // Получаем расстояние
+        function getDistance() {
+            navigator.geolocation.getCurrentPosition(pos => {
+                const target = getTarget();
+                const R = 6371e3;
+                const φ1 = pos.coords.latitude * Math.PI/180;
+                const φ2 = target.lat * Math.PI/180;
+                const Δφ = (target.lat - pos.coords.latitude) * Math.PI/180;
+                const Δλ = (target.lng - pos.coords.longitude) * Math.PI/180;
+                const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+                const dist = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+                document.getElementById('distance').textContent = `${dist} meters (target: ${target.lat}, ${target.lng})`;
+            });
         }
-        
-        // Функция для обновления направления и расстояния
-        function updatePosition(position) {
-            const userLat = position.coords.latitude;
-            const userLon = position.coords.longitude;
-            
-            // Вычисляем расстояние
-            const distance = calculateDistance(userLat, userLon, targetPoint.latitude, targetPoint.longitude);
-            
-            // Вычисляем направление
-            const bearing = calculateBearing(userLat, userLon, targetPoint.latitude, targetPoint.longitude);
-            
-            // Обновляем UI
-            distanceElement.textContent = `Расстояние до цели: ${Math.round(distance)} метров`;
-            
-            // Поворачиваем стрелку в нужном направлении
-            arrowElement.style.transform = `rotate(${bearing}deg)`;
-            
-            statusElement.textContent = "Местоположение определено";
-            statusElement.className = "";
-        }
-        
-        // Функция для обработки ошибок
-        function handleError(error) {
-            let message = "";
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    message = "Доступ к местоположению запрещен. Разрешите доступ в настройках браузера.";
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    message = "Информация о местоположении недоступна.";
-                    break;
-                case error.TIMEOUT:
-                    message = "Время ожидания запроса истекло.";
-                    break;
-                case error.UNKNOWN_ERROR:
-                    message = "Произошла неизвестная ошибка.";
-                    break;
-            }
-            statusElement.textContent = message;
-            statusElement.className = "error";
-        }
-        
-        // Функция для запроса местоположения
-        function requestLocation() {
-            statusElement.textContent = "Определение местоположения...";
-            
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    updatePosition,
-                    handleError,
-                    { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
-                );
-            } else {
-                statusElement.textContent = "Геолокация не поддерживается вашим браузером.";
-                statusElement.className = "error";
-            }
-        }
-        
-        // Запрашиваем местоположение при загрузке страницы
-        window.onload = requestLocation;
-        
-        // Обновляем по кнопке
-        refreshButton.addEventListener('click', requestLocation);
     </script>
 </body>
 </html>
