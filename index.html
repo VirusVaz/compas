@@ -2,58 +2,63 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Расстояние до точки</title>
+  <title>Расстояние</title>
   <style>
     body { font-family: sans-serif; padding: 2em; }
-    #distance { font-size: 1.5em; margin-top: 1em; }
+    #distance { font-size: 1.5em; }
   </style>
 </head>
 <body>
-  <h1>Расстояние до заданной точки</h1>
-  <button onclick="updateDistance()">Обновить расстояние</button>
+  <h1>Оставшееся расстояние/h1>
   <div id="distance">Ожидаем данные...</div>
 
   <script>
-    // Правильно закодированные координаты (53.4702, 59.0538)
-    const encodedLat = "d1k6"; // 534702 в base36
-    const encodedLng = "1r0i"; // 590538 в base36
+    const encodedLat = "201369"; 
+    const encodedLng = "206723"; 
 
-    function decodeCoordinate(base36str) {
-      return parseInt(base36str, 36) / 10000; // возвращает градусы
+    function decode(encoded) {
+      return parseInt(encoded.split('').map(d =>
+        (parseInt(d) + 3) % 10
+      ).join('')) / 10000;
     }
 
-    function haversineDistance(lat1, lon1, lat2, lon2) {
+    function toRadians(deg) {
+      return deg * Math.PI / 180;
+    }
+
+    function haversine(lat1, lon1, lat2, lon2) {
       const R = 6371000;
-      const φ1 = lat1 * Math.PI/180;
-      const φ2 = lat2 * Math.PI/180;
-      const Δφ = (lat2-lat1) * Math.PI/180;
-      const Δλ = (lon2-lon1) * Math.PI/180;
-      const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const φ1 = toRadians(lat1);
+      const φ2 = toRadians(lat2);
+      const Δφ = toRadians(lat2 - lat1);
+      const Δλ = toRadians(lon2 - lon1);
+
+      const a = Math.sin(Δφ/2)**2 +
+                Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return R * c;
     }
 
-    function updateDistance() {
-      if (!navigator.geolocation) {
-        document.getElementById('distance').textContent = 'Геолокация не поддерживается.';
-        return;
-      }
+    function updateDistance(pos) {
+      const userLat = pos.coords.latitude;
+      const userLng = pos.coords.longitude;
 
-      navigator.geolocation.getCurrentPosition(position => {
-        const lat1 = position.coords.latitude;
-        const lon1 = position.coords.longitude;
-        
-        const lat2 = decodeCoordinate(encodedLat);
-        const lon2 = decodeCoordinate(encodedLng);
+      const targetLat = decode(encodedLat);
+      const targetLng = decode(encodedLng);
 
-        const distance = haversineDistance(lat1, lon1, lat2, lon2);
-        document.getElementById('distance').textContent =
-          `Расстояние: ${Math.round(distance)} метров`;
-      }, error => {
-        document.getElementById('distance').textContent = 'Ошибка получения геопозиции.';
+      const distance = haversine(userLat, userLng, targetLat, targetLng);
+      document.getElementById('distance').textContent =
+        `Расстояние: ${Math.round(distance)} метров`;
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(updateDistance, () => {
+        document.getElementById('distance').textContent = 'Не удалось получить координаты. Обновите страницу, разрешите доступ к геолокации. ';
       });
+    } else {
+      document.getElementById('distance').textContent = 'Геолокация не поддерживается. Обновите страницу, разрешите доступ к геолокации. ';
     }
-
-    updateDistance();
   </script>
 </body>
 </html>
