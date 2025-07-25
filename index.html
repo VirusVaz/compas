@@ -14,25 +14,22 @@
   <div id="distance">Ожидаем данные...</div>
 
   <script>
-    const encodedLat = "1l91";
-    const encodedLng = "2dse";
+    // Правильно закодированные координаты (53.4702, 59.0538)
+    const encodedLat = "d1k6"; // 534702 в base36
+    const encodedLng = "1r0i"; // 590538 в base36
 
     function decodeCoordinate(base36str) {
-      return parseInt(base36str, 36) / 100000; // радианы
+      return parseInt(base36str, 36) / 10000; // возвращает градусы
     }
 
     function haversineDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371000; // радиус Земли в метрах
-      const dLat = lat2 - lat1;
-      const dLon = lon2 - lon1;
-      const a = Math.sin(dLat/2)**2 +
-                Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon/2)**2;
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    }
-
-    function toRadians(deg) {
-      return deg * Math.PI / 180;
+      const R = 6371000;
+      const φ1 = lat1 * Math.PI/180;
+      const φ2 = lat2 * Math.PI/180;
+      const Δφ = (lat2-lat1) * Math.PI/180;
+      const Δλ = (lon2-lon1) * Math.PI/180;
+      const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
     function updateDistance() {
@@ -42,9 +39,9 @@
       }
 
       navigator.geolocation.getCurrentPosition(position => {
-        const lat1 = toRadians(position.coords.latitude);
-        const lon1 = toRadians(position.coords.longitude);
-
+        const lat1 = position.coords.latitude;
+        const lon1 = position.coords.longitude;
+        
         const lat2 = decodeCoordinate(encodedLat);
         const lon2 = decodeCoordinate(encodedLng);
 
@@ -56,12 +53,7 @@
       });
     }
 
-    // Автообновление при изменении позиции
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(() => updateDistance());
-    }
-
-    updateDistance(); // при загрузке
+    updateDistance();
   </script>
 </body>
 </html>
