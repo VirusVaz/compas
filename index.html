@@ -55,6 +55,9 @@
     if (navigator.geolocation) {
       navigator.geolocation.watchPosition(updateDistance, () => {
         document.getElementById('distance').textContent = 'Не удалось получить координаты. Обновите страницу, разрешите доступ к геолокации. ';
+        }, {
+      enableHighAccuracy: true,
+      maximumAge: 0
       });
     } else {
       document.getElementById('distance').textContent = 'Геолокация не поддерживается. Обновите страницу, разрешите доступ к геолокации. ';
